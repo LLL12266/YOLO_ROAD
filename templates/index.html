@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>路面病害检测 - YOLOv5 智能识别平台</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #dbeafe;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --radius: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
+            --transition: 0.2s ease;
+        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .container{max-width:1280px;margin:0 auto;padding:24px 20px}
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 32px 0 24px;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .header h1 .icon {
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 20px;
+        }
+        .header p {
+            color: var(--text-secondary);
+            margin-top: 6px;
+            font-size: 14px;
+        }
+
+        /* Mode Switcher */
+        .mode-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 4px;
+            box-shadow: var(--shadow);
+            width: fit-content;
+            margin: 0 auto 24px;
+        }
+        .mode-tab {
+            padding: 10px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all var(--transition);
+            border: none;
+            background: transparent;
+            white-space: nowrap;
+        }
+        .mode-tab.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+        }
+        .mode-tab:hover:not(.active) {
+            background: #f1f5f9;
+            color: var(--text);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title::before {
+            content: '';
+            width: 4px;
+            height: 18px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: var(--radius);
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition);
+            background: #f8fafc;
+            position: relative;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+        .upload-area.dragover {
+            transform: scale(1.01);
+        }
+        .upload-icon {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 12px;
+            background: var(--primary-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        .upload-area p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        .upload-area .primary-text {
+            color: var(--primary);
+            font-weight: 500;
+        }
+        #file-input{display:none}
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37,99,235,0.35);
+        }
+        .btn-danger {
+            background: #fff;
+            color: var(--danger);
+            border: 1px solid #fecaca;
+        }
+        .btn-danger:hover:not(:disabled) {
+            background: #fef2f2;
+            border-color: var(--danger);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-group{display:flex;gap:10px;flex-wrap:wrap}
+
+        /* Main Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 20px;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Image Compare */
+        .compare-container {
+            position: relative;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: #f1f5f9;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .compare-container img {
+            width: 100%;
+            display: block;
+            object-fit: contain;
+            max-height: 600px;
+        }
+        .compare-label {
+            position: absolute;
+            top: 12px;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 2;
+        }
+        .label-original {
+            left: 12px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+        }
+        .label-result {
+            right: 12px;
+            background: rgba(37,99,235,0.85);
+            color: #fff;
+        }
+        .compare-toggle {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 4px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 8px;
+            padding: 4px;
+            box-shadow: var(--shadow-md);
+            z-index: 2;
+        }
+        .toggle-btn {
+            padding: 6px 16px;
+            border-radius: 6px;
+            border: none;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-secondary);
+            transition: all var(--transition);
+        }
+        .toggle-btn.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        /* Result Sidebar */
+        .result-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .stat-card {
+            background: var(--bg);
+            border-radius: 10px;
+            padding: 14px 12px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1;
+        }
+        .stat-value.danger { color: var(--danger); }
+        .stat-value.warning { color: var(--warning); }
+        .stat-value.success { color: var(--success); }
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .disease-list {
+            max-height: 420px;
+            overflow-y: auto;
+        }
+        .disease-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            background: var(--bg);
+            border: 1px solid transparent;
+            transition: all var(--transition);
+        }
+        .disease-item:hover {
+            border-color: var(--border);
+            box-shadow: var(--shadow);
+        }
+        .disease-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .confidence-badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .confidence-high { background: #dcfce7; color: #166534; }
+        .confidence-medium { background: #fef3c7; color: #92400e; }
+        .confidence-low { background: #fee2e2; color: #991b1b; }
+
+        /* Loading */
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            border-radius: var(--radius);
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to{transform:rotate(360deg)} }
+        .loading-text {
+            margin-top: 12px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #fff;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            max-width: 360px;
+        }
+        .toast-error { background: var(--danger); }
+        .toast-success { background: var(--success); }
+        .toast-info { background: var(--primary); }
+        @keyframes slideIn {
+            from{transform:translateX(100%);opacity:0}
+            to{transform:translateX(0);opacity:1}
+        }
+
+        /* Camera Preview */
+        .camera-preview {
+            position: relative;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: #000;
+        }
+        .camera-preview video {
+            width: 100%;
+            display: block;
+        }
+        .camera-status {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%,100%{opacity:1}
+            50%{opacity:0.4}
+        }
+        .fps-counter {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-family: monospace;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+        .empty-state p {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+{% raw %}
+<div id="app">
+    <!-- Toast Notifications -->
+    <div class="toast-container">
+        <div v-for="(toast, idx) in toasts" :key="idx" :class="'toast toast-'+toast.type">
+            {{ toast.message }}
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <span class="icon">🛣️</span>
+                路面病害检测平台
+            </h1>
+            <p>基于 YOLOv5 深度学习模型 · 实时识别路面裂缝、坑槽等病害类型</p>
+        </div>
+
+        <!-- Mode Tabs -->
+        <div class="mode-tabs">
+            <button class="mode-tab" :class="{active: mode==='upload'}" @click="switchMode('upload')">
+                📷 图片上传检测
+            </button>
+            <button class="mode-tab" :class="{active: mode==='camera'}" @click="switchMode('camera')">
+                🎥 摄像头实时检测
+            </button>
+        </div>
+
+        <!-- Upload Mode -->
+        <div v-if="mode==='upload'">
+            <div class="card">
+                <div class="card-title">选择检测图片</div>
+                <div class="upload-area"
+                     :class="{dragover: isDragover}"
+                     @click="$refs.file.click()"
+                     @dragover.prevent="isDragover=true"
+                     @dragleave.prevent="isDragover=false"
+                     @drop.prevent="onDrop">
+                    <div class="upload-icon">📁</div>
+                    <p><span class="primary-text">点击选择图片</span> 或拖拽图片到此处</p>
+                    <p>支持 JPG、PNG 格式</p>
+                    <input ref="file" id="file-input" type="file" accept="image/*" @change="onFileChange"/>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div v-if="resultImg || isUploading" class="main-grid">
+                <div class="card" style="padding:16px">
+                    <div class="compare-container">
+                        <!-- Loading -->
+                        <div v-if="isUploading" class="loading-overlay">
+                            <div class="spinner"></div>
+                            <div class="loading-text">AI 模型正在分析中...</div>
+                        </div>
+                        <!-- Image Display -->
+                        <img v-if="!isUploading" :src="showResult ? resultImg : originalImg" alt="检测图片">
+                        <div v-if="!isUploading && originalImg" class="compare-toggle">
+                            <button class="toggle-btn" :class="{active: !showResult}" @click="showResult=false">原图</button>
+                            <button class="toggle-btn" :class="{active: showResult}" @click="showResult=true">检测结果</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="card" v-if="boxes.length">
+                    <div class="card-title">检测统计</div>
+                    <div class="result-stats">
+                        <div class="stat-card">
+                            <div class="stat-value">{{ boxes.length }}</div>
+                            <div class="stat-label">检测目标总数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" :class="avgConfClass">{{ avgConf }}</div>
+                            <div class="stat-label">平均置信度</div>
+                        </div>
+                    </div>
+
+                    <div class="card-title" style="margin-top:16px">病害列表</div>
+                    <div class="disease-list">
+                        <div class="disease-item" v-for="(box,idx) in boxes" :key="idx">
+                            <span class="disease-name">{{ box.cls_name }}</span>
+                            <span class="confidence-badge" :class="confClass(box.conf)">
+                                {{ (box.conf * 100).toFixed(1) }}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty result -->
+                <div class="card" v-if="!boxes.length && !isUploading && resultImg">
+                    <div class="empty-state">
+                        <div class="icon">✅</div>
+                        <p>未检测到路面病害，路面状况良好！</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Camera Mode -->
+        <div v-if="mode==='camera'">
+            <div class="card">
+                <div class="card-title">摄像头实时检测</div>
+                <div class="btn-group" style="margin-bottom:16px">
+                    <button class="btn btn-primary" @click="openCam" :disabled="isCamOn">
+                        ▶ 开启摄像头
+                    </button>
+                    <button class="btn btn-danger" @click="closeCam" :disabled="!isCamOn">
+                        ⬛ 关闭摄像头
+                    </button>
+                </div>
+
+                <div v-if="isCamOn" class="main-grid">
+                    <!-- 左列：原视频预览 -->
+                    <div class="compare-container" style="aspect-ratio:4/3">
+                        <video ref="camVideo" autoplay playsinline muted style="width:100%;display:block;max-height:480px;object-fit:contain"></video>
+                        <div class="camera-status">
+                            <span class="status-dot"></span>
+                            实时检测中
+                        </div>
+                        <div class="fps-counter">{{ fps }} FPS</div>
+                    </div>
+
+                    <!-- 右列：检测结果 + 统计 -->
+                    <div>
+                        <!-- 检测结果图片 -->
+                        <div class="card" v-if="resultImg" style="padding:12px;margin-bottom:12px">
+                            <div class="compare-container" style="min-height:200px">
+                                <img :src="resultImg" alt="检测结果" style="max-height:300px">
+                            </div>
+                        </div>
+                        <div class="card" v-if="!resultImg" style="padding:12px;margin-bottom:12px">
+                            <div class="empty-state">
+                                <p style="font-size:13px">等待检测结果...</p>
+                            </div>
+                        </div>
+                        <!-- 统计面板 -->
+                        <div v-if="boxes.length">
+                            <div class="result-stats" style="margin-bottom:12px">
+                                <div class="stat-card">
+                                    <div class="stat-value">{{ boxes.length }}</div>
+                                    <div class="stat-label">当前检测数</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value" :class="avgConfClass">{{ avgConf }}</div>
+                                    <div class="stat-label">平均置信度</div>
+                                </div>
+                            </div>
+                            <div class="disease-list" style="max-height:260px">
+                                <div class="disease-item" v-for="(box,idx) in boxes" :key="idx">
+                                    <span class="disease-name">{{ box.cls_name }}</span>
+                                    <span class="confidence-badge" :class="confClass(box.conf)">
+                                        {{ (box.conf * 100).toFixed(1) }}%
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const {createApp} = Vue
+createApp({
+    data(){
+        return {
+            mode: 'upload',
+            resultImg: "",
+            originalImg: "",
+            boxes: [],
+            isUploading: false,
+            showResult: true,
+            isDragover: false,
+            toasts: [],
+
+            // Camera
+            isCamOn: false,
+            stream: null,
+            camTimer: null,
+            isRequesting: false,
+            fps: 0,
+            _frameCount: 0,
+            _fpsTimer: null,
+            _camReady: false,
+        }
+    },
+    computed: {
+        avgConf() {
+            if (!this.boxes.length) return '--'
+            const sum = this.boxes.reduce((s, b) => s + b.conf, 0)
+            return (sum / this.boxes.length * 100).toFixed(1) + '%'
+        },
+        avgConfClass() {
+            if (!this.boxes.length) return ''
+            const avg = this.boxes.reduce((s, b) => s + b.conf, 0) / this.boxes.length
+            if (avg >= 0.7) return 'success'
+            if (avg >= 0.4) return 'warning'
+            return 'danger'
+        }
+    },
+    methods: {
+        // Toast
+        showToast(message, type='info', duration=3000) {
+            const toast = {message, type}
+            this.toasts.push(toast)
+            setTimeout(() => {
+                const idx = this.toasts.indexOf(toast)
+                if (idx > -1) this.toasts.splice(idx, 1)
+            }, duration)
+        },
+
+        // Mode switch
+        switchMode(mode) {
+            if (this.mode === mode) return
+            if (this.isCamOn) this.closeCam()
+            this.mode = mode
+            if (mode === 'upload') {
+                // keep results
+            } else {
+                this.resultImg = ""
+                this.originalImg = ""
+                this.boxes = []
+            }
+        },
+
+        confClass(conf) {
+            if (conf >= 0.7) return 'confidence-high'
+            if (conf >= 0.4) return 'confidence-medium'
+            return 'confidence-low'
+        },
+
+        // File Upload
+        onFileChange(e) {
+            const f = e.target.files[0]
+            if (!f) return
+            this.uploadFile(f)
+        },
+        onDrop(e) {
+            this.isDragover = false
+            const f = e.dataTransfer.files[0]
+            if (f && f.type.startsWith('image/')) {
+                this.uploadFile(f)
+            } else {
+                this.showToast('请上传图片文件', 'error')
+            }
+        },
+        async uploadFile(file) {
+            // Show original image preview
+            const reader = new FileReader()
+            reader.onload = (ev) => {
+                this.originalImg = ev.target.result
+                this.showResult = true
+            }
+            reader.readAsDataURL(file)
+
+            this.isUploading = true
+            this.resultImg = ""
+            this.boxes = []
+
+            const fd = new FormData()
+            fd.append("img", file)
+            try {
+                const res = await fetch("/detect", {method:"POST", body:fd})
+                const json = await res.json()
+                if (json.code !== 200) {
+                    this.showToast(json.msg || '检测失败', 'error')
+                    return
+                }
+                this.resultImg = json.result_img
+                this.boxes = json.boxes || []
+                if (this.boxes.length === 0) {
+                    this.showToast('未检测到路面病害', 'info')
+                } else {
+                    this.showToast(`检测到 ${this.boxes.length} 处病害`, 'success')
+                }
+            } catch (err) {
+                console.error(err)
+                this.showToast('网络请求失败，请检查服务是否启动', 'error')
+            } finally {
+                this.isUploading = false
+                // Reset file input to allow re-upload same file
+                if (this.$refs.file) this.$refs.file.value = ''
+            }
+        },
+
+        // Camera
+        async openCam() {
+            try {
+                this.stream = await navigator.mediaDevices.getUserMedia({
+                    video: {width: 640, height: 480, facingMode: 'environment'}
+                })
+                // 先打开开关，让 Vue 渲染 <video> 元素
+                this.isCamOn = true
+                // 等 Vue 完成 DOM 渲染后再绑定视频流
+                await this.$nextTick()
+                const videoEl = this.$refs.camVideo
+                if (videoEl) {
+                    videoEl.srcObject = this.stream
+                    await videoEl.play()
+                }
+                this._camReady = true
+                this._frameCount = 0
+                this.fps = 0
+
+                // FPS counter
+                this._fpsTimer = setInterval(() => {
+                    this.fps = this._frameCount
+                    this._frameCount = 0
+                }, 1000)
+
+                // Frame loop - reuse video element
+                this.camTimer = setInterval(() => {
+                    this.sendFrame()
+                }, 500)
+            } catch(err) {
+                this.isCamOn = false
+                this.showToast('摄像头打开失败：' + (err.message || '请检查权限'), 'error')
+                console.error(err)
+            }
+        },
+        closeCam() {
+            if (this.camTimer) {
+                clearInterval(this.camTimer)
+                this.camTimer = null
+            }
+            if (this._fpsTimer) {
+                clearInterval(this._fpsTimer)
+                this._fpsTimer = null
+            }
+            if (this.stream) {
+                this.stream.getTracks().forEach(t => t.stop())
+                this.stream = null
+            }
+            this.isCamOn = false
+            this.isRequesting = false
+            this._camReady = false
+            this.fps = 0
+            this.boxes = []
+            this.resultImg = ""
+        },
+        async sendFrame() {
+            if (this.isRequesting || !this._camReady) return
+            this.isRequesting = true
+
+            const videoEl = this.$refs.camVideo
+            if (!videoEl || videoEl.readyState < 2) {
+                this.isRequesting = false
+                return
+            }
+
+            const canvas = document.createElement("canvas")
+            canvas.width = 640
+            canvas.height = 480
+            const ctx = canvas.getContext("2d")
+            ctx.drawImage(videoEl, 0, 0, 640, 480)
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    this.isRequesting = false
+                    return
+                }
+                const fd = new FormData()
+                fd.append("img", blob)
+                try {
+                    const res = await fetch("/detect_camera", {method:"POST", body:fd})
+                    const json = await res.json()
+                    if (json.code === 200) {
+                        this.resultImg = json.result_img
+                        this.boxes = json.boxes || []
+                        this._frameCount++
+                    }
+                } catch(e) {
+                    console.error("帧传输错误", e)
+                } finally {
+                    this.isRequesting = false
+                }
+            }, "image/jpeg", 0.75)
+        }
+    },
+    mounted() {
+        // Clean up on page leave
+        window.addEventListener('beforeunload', () => {
+            if (this.camTimer) clearInterval(this.camTimer)
+            if (this._fpsTimer) clearInterval(this._fpsTimer)
+            if (this.stream) {
+                this.stream.getTracks().forEach(t => t.stop())
+            }
+        })
+    }
+}).mount("#app")
+</script>
+{% endraw %}
+</body>
+</html>

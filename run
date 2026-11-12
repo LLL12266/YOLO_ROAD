@@ -1,0 +1,3 @@
+python train.py --data D:\YOLO_ROAD\yolov5_datasets\RoadDataSet\data.yaml --weights weights\yolov5s.pt --project D:\YOLO_ROAD\yolov5-master\runs\train\road_detection --name exp
+
+python detect.py --data D:\YOLO_ROAD\yolov5_datasets\RoadDataset\data.yaml --weights D:\YOLO_ROAD\yolov5-master\runs\train\road_detection\exp\weights\best.pt --source D:\YOLO_ROAD\yolov5_datasets\RoadDataset\detect --project D:\YOLO_ROAD\yolov5-master\runs\detect\road_detect

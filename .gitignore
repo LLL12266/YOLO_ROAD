@@ -1,0 +1,17 @@
+.idea/
+.venv/
+__pycache__/
+*.py[cod]
+
+yolo_orignal_data/
+yolov5_datasets/RoadDataset/train/
+yolov5_datasets/RoadDataset/valid/
+yolov5-master/yolov5-master/
+yolov5-master/runs/
+
+*.pt
+*.pth
+*.onnx
+*.engine
+*.cache
+*.cache.npy
