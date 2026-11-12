@@ -3,7 +3,8 @@
 __pycache__/
 *.py[cod]
 
-yolo_orignal_data/
+yolo_orignal_data/*
+!yolo_orignal_data/.gitkeep
 yolov5_datasets/**/train/
 yolov5_datasets/**/valid/
 yolov5-master/yolov5-master/
